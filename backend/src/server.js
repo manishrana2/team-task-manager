@@ -11,17 +11,11 @@ const app = express();
 
 // FRONTEND_URLS is a comma-separated list so the same backend can serve
 // localhost during dev and the deployed frontend in production
-const allowedOrigins = (
-  process.env.FRONTEND_URLS ||
-  process.env.FRONTEND_URL ||
-  'http://localhost:3000,http://localhost:3001,http://localhost:3002'
-)
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow all origins
+    callback(null, true);
+  },
   credentials: true,
 }));
 app.use(express.json());
