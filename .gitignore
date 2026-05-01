@@ -1,0 +1,21 @@
+node_modules/
+# env files (secrets) - ignore everywhere explicitly
+.env
+.env.local
+backend/.env
+backend/.env.local
+frontend/.env.local
+
+# OS / editor
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# build outputs
+dist/
+build/
+.next/
+out/
+frontend/.next/
+frontend/out/
