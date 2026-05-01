@@ -1,55 +1,59 @@
 CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role ENUM('Admin', 'Member') DEFAULT 'Member',
+  role VARCHAR(50) CHECK (role IN ('Admin', 'Member')) DEFAULT 'Member',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_email (email),
-  INDEX idx_role (role)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+
 CREATE TABLE projects (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
   created_by INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_created_by (created_by)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE INDEX idx_projects_created_by ON projects(created_by);
+
 CREATE TABLE project_members (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   project_id INT NOT NULL,
   user_id INT NOT NULL,
   added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE KEY unique_project_user (project_id, user_id),
-  INDEX idx_project_id (project_id),
-  INDEX idx_user_id (user_id)
+  UNIQUE (project_id, user_id)
 );
 
+CREATE INDEX idx_pm_project_id ON project_members(project_id);
+CREATE INDEX idx_pm_user_id ON project_members(user_id);
+
 CREATE TABLE tasks (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   project_id INT NOT NULL,
   assigned_to INT,
-  status ENUM('Todo', 'In Progress', 'Done') DEFAULT 'Todo',
-  due_date DATETIME,
+  status VARCHAR(50) CHECK (status IN ('Todo', 'In Progress', 'Done')) DEFAULT 'Todo',
+  due_date TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-  FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
-  INDEX idx_project_id (project_id),
-  INDEX idx_assigned_to (assigned_to),
-  INDEX idx_status (status),
-  INDEX idx_due_date (due_date)
+  FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE INDEX idx_tasks_project_id ON tasks(project_id);
+CREATE INDEX idx_tasks_assigned_to ON tasks(assigned_to);
+CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_tasks_due_date ON tasks(due_date);
 
 CREATE VIEW user_task_summary AS
 SELECT 

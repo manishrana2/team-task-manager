@@ -309,12 +309,12 @@ const getDashboardStats = async (req, res) => {
     const query = userRole === 'Member'
       ? `SELECT
           COUNT(DISTINCT tasks.id) AS totalTasks,
-          SUM(IF(tasks.status = 'Done', 1, 0)) AS completedTasks,
-          SUM(IF(tasks.status != 'Done', 1, 0)) AS pendingTasks,
-          SUM(IF(tasks.status = 'In Progress', 1, 0)) AS inProgressTasks,
-          SUM(IF(tasks.status = 'Todo', 1, 0)) AS todoTasks,
-          SUM(IF(tasks.due_date IS NOT NULL AND tasks.due_date < ? AND tasks.status != 'Done', 1, 0)) AS overdueTasks,
-          SUM(IF(tasks.priority = 'High' AND tasks.status != 'Done', 1, 0)) AS highPriorityPending
+          SUM(CASE WHEN tasks.status = 'Done' THEN 1 ELSE 0 END) AS completedTasks,
+          SUM(CASE WHEN tasks.status != 'Done' THEN 1 ELSE 0 END) AS pendingTasks,
+          SUM(CASE WHEN tasks.status = 'In Progress' THEN 1 ELSE 0 END) AS inProgressTasks,
+          SUM(CASE WHEN tasks.status = 'Todo' THEN 1 ELSE 0 END) AS todoTasks,
+          SUM(CASE WHEN tasks.due_date IS NOT NULL AND tasks.due_date < ? AND tasks.status != 'Done' THEN 1 ELSE 0 END) AS overdueTasks,
+          SUM(CASE WHEN tasks.priority = 'High' AND tasks.status != 'Done' THEN 1 ELSE 0 END) AS highPriorityPending
          FROM (
            SELECT DISTINCT tasks.*
            FROM tasks
@@ -323,12 +323,12 @@ const getDashboardStats = async (req, res) => {
          ) as tasks`
       : `SELECT
           COUNT(*) AS totalTasks,
-          SUM(status = 'Done') AS completedTasks,
-          SUM(status != 'Done') AS pendingTasks,
-          SUM(status = 'In Progress') AS inProgressTasks,
-          SUM(status = 'Todo') AS todoTasks,
-          SUM(due_date IS NOT NULL AND due_date < ? AND status != 'Done') AS overdueTasks,
-          SUM(priority = 'High' AND status != 'Done') AS highPriorityPending
+          SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) AS completedTasks,
+          SUM(CASE WHEN status != 'Done' THEN 1 ELSE 0 END) AS pendingTasks,
+          SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) AS inProgressTasks,
+          SUM(CASE WHEN status = 'Todo' THEN 1 ELSE 0 END) AS todoTasks,
+          SUM(CASE WHEN due_date IS NOT NULL AND due_date < ? AND status != 'Done' THEN 1 ELSE 0 END) AS overdueTasks,
+          SUM(CASE WHEN priority = 'High' AND status != 'Done' THEN 1 ELSE 0 END) AS highPriorityPending
          FROM tasks`;
 
     const queryParams = userRole === 'Member' ? [now, ...params] : [now];
