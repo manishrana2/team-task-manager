@@ -48,8 +48,8 @@ app.use((err, req, res, next) => {
 });
 
 // Vercel Serverless requires exporting the app instead of app.listen()
-// We only listen if running locally (not on Vercel)
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+// We only skip listening if running specifically on Vercel
+if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 5001;
   const HOST = process.env.HOST || '0.0.0.0';
 
