@@ -67,9 +67,9 @@ const getAllProjects = async (req, res) => {
     const [taskStats] = await pool.query(
       `SELECT project_id,
               COUNT(*) AS task_count,
-              SUM(status = 'Done') AS done_count
+              SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) AS done_count
        FROM tasks
-       WHERE project_id IN (?)
+       WHERE project_id = ANY($1)
        GROUP BY project_id`,
       [projectIds]
     );
@@ -154,38 +154,27 @@ const updateProject = async (req, res) => {
 };
 
 const deleteProject = async (req, res) => {
-  const connection = await pool.getConnection();
   try {
     const { projectId } = req.params;
 
-    const [existingProject] = await connection.query(
+    const [existingProject] = await pool.query(
       'SELECT * FROM projects WHERE id = ?',
       [projectId]
     );
 
     if (existingProject.length === 0) {
-      connection.release();
       return res.status(404).json({ message: 'Project not found' });
     }
 
     if (existingProject[0].created_by !== req.user.id && req.user.role !== 'Admin') {
-      connection.release();
       return res.status(403).json({ message: 'Permission denied' });
     }
 
-    await connection.beginTransaction();
-
-    await connection.query('DELETE FROM tasks WHERE project_id = ?', [projectId]);
-    await connection.query('DELETE FROM project_members WHERE project_id = ?', [projectId]);
-    await connection.query('DELETE FROM projects WHERE id = ?', [projectId]);
-
-    await connection.commit();
-    connection.release();
+    // Cascading deletes handled by FK constraints in schema
+    await pool.query('DELETE FROM projects WHERE id = ?', [projectId]);
 
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {
-    await connection.rollback();
-    connection.release();
     console.error('Delete project error:', error);
     res.status(500).json({ message: 'Error deleting project', error: error.message });
   }

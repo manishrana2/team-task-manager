@@ -119,7 +119,7 @@ const getAllTasks = async (req, res) => {
       query += ` WHERE ${where.join(' AND ')}`;
     }
 
-    query += ' ORDER BY FIELD(t.priority, "High", "Medium", "Low"), t.due_date ASC';
+    query += ` ORDER BY CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END, t.due_date ASC`;
 
     const [tasks] = await pool.query(query, params);
 

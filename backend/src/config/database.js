@@ -4,7 +4,7 @@ require('dotenv').config();
 // Connect to Vercel Postgres using POSTGRES_URL or fallback to local connection string
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/team_task_manager',
-  ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
+  ssl: (process.env.POSTGRES_URL || process.env.DATABASE_URL) ? { rejectUnauthorized: false } : false,
 });
 
 const queryWrapper = {
