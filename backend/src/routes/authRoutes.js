@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+  signup,
   login,
   getProfile,
   getAllUsers,
@@ -20,10 +21,7 @@ const { authenticateToken, authorizeAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Public signup is disabled — all accounts are created by Admins via /api/auth/users
-router.post('/signup', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+router.post('/signup', signup);
 
 router.post('/login', loginValidation, handleValidationErrors, login);
 
