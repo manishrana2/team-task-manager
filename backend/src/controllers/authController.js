@@ -2,30 +2,31 @@ const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
 const { generateToken } = require('../utils/jwt');
 
+const getFirstAdminId = async () => {
+  const [admins] = await pool.query("SELECT id FROM users WHERE role = 'Admin' ORDER BY id ASC LIMIT 1");
+  return admins.length > 0 ? admins[0].id : null;
+};
+
 const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    const [existingUser] = await pool.query(
-      'SELECT id FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (existingUser.length > 0) {
-      return res.status(400).json({ message: 'Email already registered' });
+    const [allUsers] = await pool.query('SELECT id FROM users LIMIT 1');
+    if (allUsers.length > 0) {
+      return res.status(403).json({ message: 'Signup is disabled. Only the system administrator can create new accounts.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const [result] = await pool.query(
       'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-      [name, email, hashedPassword, 'Member']
+      [name, email, hashedPassword, 'Admin']
     );
 
     const token = generateToken({
       id: result.insertId,
       email,
-      role: 'Member',
+      role: 'Admin',
     });
 
     res.status(201).json({
@@ -35,7 +36,7 @@ const signup = async (req, res) => {
         id: result.insertId,
         name,
         email,
-        role: 'Member',
+        role: 'Admin',
       },
     });
   } catch (error) {
@@ -173,6 +174,11 @@ const updateUser = async (req, res) => {
       return res.status(400).json({ message: 'You cannot remove your own admin role' });
     }
 
+    const firstAdminId = await getFirstAdminId();
+    if (Number(userId) === firstAdminId && req.user.id !== firstAdminId) {
+      return res.status(403).json({ message: 'Only the First Admin can modify their own account' });
+    }
+
     const [emailUsers] = await pool.query(
       'SELECT id FROM users WHERE email = ? AND id <> ?',
       [email, userId]
@@ -220,6 +226,11 @@ const changeUserPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const firstAdminId = await getFirstAdminId();
+    if (Number(userId) === firstAdminId && req.user.id !== firstAdminId) {
+      return res.status(403).json({ message: 'Only the First Admin can change their own password' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
@@ -237,9 +248,14 @@ const changeUserPassword = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const firstAdminId = await getFirstAdminId();
 
-    if (Number(userId) === req.user.id) {
-      return res.status(400).json({ message: 'You cannot delete your own account' });
+    if (Number(userId) === req.user.id && req.user.id !== firstAdminId) {
+      return res.status(400).json({ message: 'You cannot delete your own account. Only the First Admin can delete their account.' });
+    }
+
+    if (Number(userId) === firstAdminId && req.user.id !== firstAdminId) {
+      return res.status(403).json({ message: 'Only the First Admin can delete their own account.' });
     }
 
     const [users] = await pool.query(
