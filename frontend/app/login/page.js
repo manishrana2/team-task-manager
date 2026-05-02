@@ -94,13 +94,12 @@ export default function LoginPage() {
 
           <p className="mt-5 text-center text-sm text-slate-600">
             Contact your admin to get workspace access.
+            <br /><br />
+            First time setting up?{' '}
+            <a href="/signup" className="font-bold text-blue-600 hover:underline">
+              Create Admin Account
+            </a>
           </p>
-
-          <div className="card-subtle mt-6">
-            <p className="text-sm font-bold text-slate-700">Seed account</p>
-            <p className="mt-2 text-sm text-slate-600">admin@example.com</p>
-            <p className="text-sm text-slate-600">password</p>
-          </div>
         </div>
       </section>
     </div>
