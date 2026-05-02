@@ -295,7 +295,7 @@ const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const now = new Date().toISOString();
 
     let joinClause = '';
     let whereClause = '';
@@ -307,16 +307,16 @@ const getDashboardStats = async (req, res) => {
       params.push(userId, userId, userId);
     }
 
-    // Use DISTINCT if we join project_members
+    // Use lowercase aliases - PostgreSQL converts all aliases to lowercase
     const query = userRole === 'Member'
       ? `SELECT
-          COUNT(DISTINCT tasks.id) AS totalTasks,
-          SUM(CASE WHEN tasks.status = 'Done' THEN 1 ELSE 0 END) AS completedTasks,
-          SUM(CASE WHEN tasks.status != 'Done' THEN 1 ELSE 0 END) AS pendingTasks,
-          SUM(CASE WHEN tasks.status = 'In Progress' THEN 1 ELSE 0 END) AS inProgressTasks,
-          SUM(CASE WHEN tasks.status = 'Todo' THEN 1 ELSE 0 END) AS todoTasks,
-          SUM(CASE WHEN tasks.due_date IS NOT NULL AND tasks.due_date < ? AND tasks.status != 'Done' THEN 1 ELSE 0 END) AS overdueTasks,
-          SUM(CASE WHEN tasks.priority = 'High' AND tasks.status != 'Done' THEN 1 ELSE 0 END) AS highPriorityPending
+          COUNT(DISTINCT tasks.id) AS total_tasks,
+          SUM(CASE WHEN tasks.status = 'Done' THEN 1 ELSE 0 END) AS completed_tasks,
+          SUM(CASE WHEN tasks.status != 'Done' THEN 1 ELSE 0 END) AS pending_tasks,
+          SUM(CASE WHEN tasks.status = 'In Progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+          SUM(CASE WHEN tasks.status = 'Todo' THEN 1 ELSE 0 END) AS todo_tasks,
+          SUM(CASE WHEN tasks.due_date IS NOT NULL AND tasks.due_date < ? AND tasks.status != 'Done' THEN 1 ELSE 0 END) AS overdue_tasks,
+          SUM(CASE WHEN tasks.priority = 'High' AND tasks.status != 'Done' THEN 1 ELSE 0 END) AS high_priority_pending
          FROM (
            SELECT DISTINCT tasks.*
            FROM tasks
@@ -324,13 +324,13 @@ const getDashboardStats = async (req, res) => {
            ${whereClause}
          ) as tasks`
       : `SELECT
-          COUNT(*) AS totalTasks,
-          SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) AS completedTasks,
-          SUM(CASE WHEN status != 'Done' THEN 1 ELSE 0 END) AS pendingTasks,
-          SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) AS inProgressTasks,
-          SUM(CASE WHEN status = 'Todo' THEN 1 ELSE 0 END) AS todoTasks,
-          SUM(CASE WHEN due_date IS NOT NULL AND due_date < ? AND status != 'Done' THEN 1 ELSE 0 END) AS overdueTasks,
-          SUM(CASE WHEN priority = 'High' AND status != 'Done' THEN 1 ELSE 0 END) AS highPriorityPending
+          COUNT(*) AS total_tasks,
+          SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) AS completed_tasks,
+          SUM(CASE WHEN status != 'Done' THEN 1 ELSE 0 END) AS pending_tasks,
+          SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+          SUM(CASE WHEN status = 'Todo' THEN 1 ELSE 0 END) AS todo_tasks,
+          SUM(CASE WHEN due_date IS NOT NULL AND due_date < ? AND status != 'Done' THEN 1 ELSE 0 END) AS overdue_tasks,
+          SUM(CASE WHEN priority = 'High' AND status != 'Done' THEN 1 ELSE 0 END) AS high_priority_pending
          FROM tasks`;
 
     const queryParams = userRole === 'Member' ? [now, ...params] : [now];
@@ -339,13 +339,13 @@ const getDashboardStats = async (req, res) => {
 
     res.json({
       stats: {
-        totalTasks: totals.totalTasks || 0,
-        completedTasks: totals.completedTasks || 0,
-        pendingTasks: totals.pendingTasks || 0,
-        inProgressTasks: totals.inProgressTasks || 0,
-        todoTasks: totals.todoTasks || 0,
-        overdueTasks: totals.overdueTasks || 0,
-        highPriorityPending: totals.highPriorityPending || 0,
+        totalTasks: parseInt(totals.total_tasks) || 0,
+        completedTasks: parseInt(totals.completed_tasks) || 0,
+        pendingTasks: parseInt(totals.pending_tasks) || 0,
+        inProgressTasks: parseInt(totals.in_progress_tasks) || 0,
+        todoTasks: parseInt(totals.todo_tasks) || 0,
+        overdueTasks: parseInt(totals.overdue_tasks) || 0,
+        highPriorityPending: parseInt(totals.high_priority_pending) || 0,
       },
     });
   } catch (error) {

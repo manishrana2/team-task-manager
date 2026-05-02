@@ -170,26 +170,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="card flex-1">
-                  <h3 className="text-base font-black mb-3">Attention</h3>
-                  <div className="space-y-2">
-                    {stats.overdueTasks > 0 && (
-                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">
-                        {stats.overdueTasks} overdue task{stats.overdueTasks !== 1 ? 's' : ''}
-                      </div>
-                    )}
-                    {(stats.highPriorityPending || 0) > 0 && (
-                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">
-                        {stats.highPriorityPending} high priority pending
-                      </div>
-                    )}
-                    {stats.overdueTasks === 0 && (stats.highPriorityPending || 0) === 0 && (
-                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
-                        Everything looks good.
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
           </>
