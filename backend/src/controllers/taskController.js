@@ -82,7 +82,8 @@ const getAllTasks = async (req, res) => {
   try {
     const { status, projectId, assignedTo, priority } = req.query;
 
-    let query = `SELECT DISTINCT t.*, p.name as project_name, u.name as assigned_to_name
+    let innerQuery = `SELECT DISTINCT t.*, p.name as project_name, u.name as assigned_to_name,
+      CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END as priority_order
       FROM tasks t
       LEFT JOIN projects p ON t.project_id = p.id
       LEFT JOIN users u ON t.assigned_to = u.id`;
@@ -90,7 +91,7 @@ const getAllTasks = async (req, res) => {
     const params = [];
 
     if (req.user.role === 'Member') {
-      query += ' LEFT JOIN project_members pm ON p.id = pm.project_id';
+      innerQuery += ' LEFT JOIN project_members pm ON p.id = pm.project_id';
       where.push('(t.assigned_to = ? OR pm.user_id = ? OR p.created_by = ?)');
       params.push(req.user.id, req.user.id, req.user.id);
     }
@@ -116,10 +117,11 @@ const getAllTasks = async (req, res) => {
     }
 
     if (where.length > 0) {
-      query += ` WHERE ${where.join(' AND ')}`;
+      innerQuery += ` WHERE ${where.join(' AND ')}`;
     }
 
-    query += ` ORDER BY CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 3 ELSE 4 END, t.due_date ASC`;
+    // Wrap in subquery to allow ORDER BY on non-select expressions with DISTINCT
+    const query = `SELECT * FROM (${innerQuery}) as sub ORDER BY priority_order, due_date ASC NULLS LAST`;
 
     const [tasks] = await pool.query(query, params);
 
